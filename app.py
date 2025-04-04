@@ -1,32 +1,22 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask import Flask, render_template, request, jsonify
 from transformers import pipeline
 
 app = Flask(__name__)
-CORS(app)
 
-# Load sentiment analysis model
-sentiment_pipeline = pipeline("sentiment-analysis")
+# Load sentiment model
+classifier = pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
 
-@app.route('/')
-def home():
-    return "Sentiment Analysis Chatbot API is Running!"
+@app.route("/")
+def index():
+    return render_template("index.html")
 
-@app.route('/analyze', methods=['POST'])
+@app.route("/analyze", methods=["POST"])
 def analyze():
-    data = request.json  
-    text = data.get("text", "")
+    user_input = request.json.get("text")
+    if not user_input:
+        return jsonify({"error": "No text provided"}), 400
+    result = classifier(user_input)[0]
+    return jsonify(result)
 
-    if not text:
-        return jsonify({"error": "No text provided"})
-
-    result = sentiment_pipeline(text)[0]
-    sentiment = result["label"]
-    confidence = round(result["score"] * 100, 2)
-
-    return jsonify({"sentiment": sentiment, "confidence": confidence})
-
-if __name__ == '__main__':
-    import os
-port = int(os.environ.get("PORT", 5000))  # Get the port from Render
-app.run(host="0.0.0.0", port=port, debug=False)  # Run on the correct port
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)

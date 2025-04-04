@@ -1,25 +1,44 @@
-<script>
-async function analyzeSentiment(event) {
-    if (event.key === "Enter" || event.type === "click") {
-        let userInput = document.getElementById("userInput").value;
-        let response = await fetch("http://127.0.0.1:5000/analyze", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: userInput })
-        });
-        let data = await response.json();
-        
-        let sentimentColor = "#28a745"; 
-        if (data.sentiment === "NEGATIVE") sentimentColor = "#dc3545";
-        else if (data.sentiment === "NEUTRAL") sentimentColor = "#ffc107";
+function analyzeSentiment() {
+    const text = document.getElementById("userInput").value;
+    if (!text.trim()) return; // Prevent empty submissions
 
-        let reviewDiv = document.createElement("div");
-        reviewDiv.classList.add("review");
-        reviewDiv.innerHTML = `<strong>Review:</strong> ${userInput}<br>
-            <span class='sentiment' style='color:${sentimentColor}'>Sentiment: ${data.sentiment} (${data.confidence}%)</span>`;
-        document.getElementById("reviews").prepend(reviewDiv);
-        
-        document.getElementById("userInput").value = "";
-    }
+    fetch("/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ text: text })
+    })
+    .then(res => res.json())
+    .then(data => {
+      const emoji = data.label === "POSITIVE" ? "😊" : "😞";
+      const resultText = `Sentiment: ${data.label} ${emoji} | Confidence: ${(data.score * 100).toFixed(2)}%`;
+
+      // Append the result to the reviews list
+      const reviewsList = document.getElementById("reviewsList");
+      const reviewItem = document.createElement("div");
+      reviewItem.className = "review-item";
+      reviewItem.innerText = `Review: ${text}\n${resultText}`;
+      reviewsList.appendChild(reviewItem);
+
+      // Apply animation
+      setTimeout(() => {
+        reviewItem.classList.add("show");
+      }, 100);
+
+      // Clear the input field
+      document.getElementById("userInput").value = "";
+    })
+    .catch(err => {
+      console.error(err);
+    });
 }
-</script>
+
+// Add event listener for Enter key
+document.getElementById("userInput").addEventListener("keypress", function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault(); // Prevent default Enter key behavior
+        analyzeSentiment();
+    }
+});
+  
