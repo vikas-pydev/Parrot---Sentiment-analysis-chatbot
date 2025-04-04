@@ -2,7 +2,7 @@ function analyzeSentiment() {
     const text = document.getElementById("userInput").value;
     if (!text.trim()) return; // Prevent empty submissions
 
-    fetch("/analyze", {
+    fetch("https://parrot-sentiment-analysis-chatbot.onrender.com", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
